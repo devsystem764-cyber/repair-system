@@ -10,9 +10,11 @@ import { LogIn, UserPlus } from 'lucide-react';
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
+  const [employeeId, setEmployeeId] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
+  const [department, setDepartment] = useState('');
+  const [unit, setUnit] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -27,11 +29,15 @@ export default function LoginPage() {
     setLoading(true);
 
     if (isLogin) {
-      const { error } = await signIn(email, password);
+      const { error } = await signIn(employeeId.trim(), password);
       if (error) {
-        setError(error.message === 'Invalid login credentials'
-          ? 'อีเมลหรือรหัสผ่านไม่ถูกต้อง'
-          : error.message);
+        setError(
+          error.message === 'Invalid login credentials'
+            ? 'เลขพนักงานหรือรหัสผ่านไม่ถูกต้อง'
+            : error.message === 'Email not confirmed'
+            ? 'บัญชียังไม่ได้รับการยืนยัน กรุณาปิด Confirm email ใน Supabase'
+            : error.message
+        );
       } else {
         router.push('/');
         router.refresh();
@@ -42,12 +48,26 @@ export default function LoginPage() {
         setLoading(false);
         return;
       }
-      const { error } = await signUp(email, password, fullName);
+      if (!employeeId.trim()) {
+        setError('กรุณากรอกเลขประจำตัวพนักงาน');
+        setLoading(false);
+        return;
+      }
+
+      const { error } = await signUp(
+        employeeId.trim(),
+        password,
+        fullName.trim(),
+        department.trim(),
+        unit.trim()
+      );
+
       if (error) {
         setError(error.message);
       } else {
-        setMessage('สมัครสำเร็จ! ลองเข้าสู่ระบบได้เลย');
+        setMessage('สมัครสำเร็จ! กรุณาเข้าสู่ระบบ');
         setIsLogin(true);
+        setPassword('');
       }
     }
     setLoading(false);
@@ -57,41 +77,67 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-3xl shadow-xl p-8 border">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-blue-600 mb-2">🛠️ ระบบแจ้งซ่อม</h1>
+          <h1 className="text-3xl font-bold text-blue-600 mb-2">🛠️ ระบบแจ้งซ่อม สหกรณ์เครดิตยูเนี่ยนคลองจั่น</h1>
           <p className="text-gray-500">
-            {isLogin ? 'เข้าสู่ระบบเพื่อจัดการงานซ่อม' : 'สร้างบัญชีใหม่'}
+            {isLogin ? 'เข้าสู่ระบบด้วยเลขประจำตัวพนักงาน' : 'ลงทะเบียนพนักงานใหม่'}
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          {!isLogin && (
-            <div>
-              <label className="block text-sm font-medium mb-2">ชื่อ-นามสกุล</label>
-              <input
-                type="text"
-                required
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-4 py-3 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="ชื่อของคุณ"
-              />
-            </div>
-          )}
-
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* เลขพนักงาน */}
           <div>
-            <label className="block text-sm font-medium mb-2">อีเมล</label>
+            <label className="block text-sm font-medium mb-1">เลขประจำตัวพนักงาน</label>
             <input
-              type="email"
+              type="text"
               required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={employeeId}
+              onChange={(e) => setEmployeeId(e.target.value)}
               className="w-full px-4 py-3 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="email@example.com"
+              placeholder="เช่น 65001234"
             />
           </div>
 
+          {/* ฟิลด์ตอนสมัครเท่านั้น */}
+          {!isLogin && (
+            <>
+              <div>
+                <label className="block text-sm font-medium mb-1">ชื่อ-นามสกุล</label>
+                <input
+                  type="text"
+                  required
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  className="w-full px-4 py-3 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="ชื่อ-นามสกุล"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">ฝ่าย</label>
+                <input
+                  type="text"
+                  required
+                  value={department}
+                  onChange={(e) => setDepartment(e.target.value)}
+                  className="w-full px-4 py-3 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="เช่น ฝ่ายไอที"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">หน่วยงาน</label>
+                <input
+                  type="text"
+                  required
+                  value={unit}
+                  onChange={(e) => setUnit(e.target.value)}
+                  className="w-full px-4 py-3 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="เช่น หน่วยงานซ่อมบำรุง"
+                />
+              </div>
+            </>
+          )}
+
           <div>
-            <label className="block text-sm font-medium mb-2">รหัสผ่าน</label>
+            <label className="block text-sm font-medium mb-1">รหัสผ่าน</label>
             <input
               type="password"
               required
@@ -114,7 +160,11 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3.5 rounded-2xl flex items-center justify-center gap-2 disabled:opacity-50"
           >
-            {loading ? 'กำลังดำเนินการ...' : isLogin ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก'}
+            {loading ? 'กำลังดำเนินการ...' : isLogin ? (
+              <><LogIn className="w-5 h-5" /> เข้าสู่ระบบ</>
+            ) : (
+              <><UserPlus className="w-5 h-5" /> ลงทะเบียน</>
+            )}
           </button>
         </form>
 
@@ -123,7 +173,7 @@ export default function LoginPage() {
             <p className="text-gray-500">
               ยังไม่มีบัญชี?{' '}
               <button onClick={() => { setIsLogin(false); setError(''); }} className="text-blue-600 hover:underline font-medium">
-                สมัครสมาชิก
+                ลงทะเบียน
               </button>
             </p>
           ) : (
@@ -136,7 +186,7 @@ export default function LoginPage() {
           )}
         </div>
 
-        <div className="mt-6 text-center">
+        <div className="mt-4 text-center">
           <Link href="/" className="text-sm text-gray-400 hover:text-gray-600">
             ← กลับหน้าหลัก
           </Link>

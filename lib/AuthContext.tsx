@@ -9,18 +9,19 @@ type Profile = {
   full_name: string | null;
   role: 'user' | 'technician' | 'admin';
   department: string | null;
+  unit: string | null;
+  employee_id: string | null;
 };
 
 type AuthContextType = {
-  user: User | null;
-  profile: Profile | null;
-  session: Session | null;
-  loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string, fullName: string) => Promise<{ error: any }>;
-  signOut: () => Promise<void>;
-  isTechnician: boolean;
-  isAdmin: boolean;
+    signIn: (employeeId: string, password: string) => Promise<{ error: any }>;
+  signUp: (
+    employeeId: string,
+    password: string,
+    fullName: string,
+    department: string,
+    unit: string
+  ) => Promise<{ error: any }>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -67,12 +68,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   };
 
-  const signUp = async (email: string, password: string, fullName: string) => {
+    const signIn = async (employeeId: string, password: string) => {
+    // แปลงเลขพนักงานเป็นอีเมลภายในระบบ
+    const email = `${employeeId}@repair.local`;
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    return { error };
+  };
+
+  const signUp = async (
+    employeeId: string,
+    password: string,
+    fullName: string,
+    department: string,
+    unit: string
+  ) => {
+    // เช็คว่าเลขพนักงานซ้ำหรือยัง
+    const { data: existing } = await supabase
+      .from('profiles')
+      .select('employee_id')
+      .eq('employee_id', employeeId)
+      .maybeSingle();
+
+    if (existing) {
+      return { error: { message: 'เลขประจำตัวพนักงานนี้มีในระบบแล้ว' } };
+    }
+
+    const email = `${employeeId}@repair.local`;
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        data: { full_name: fullName },
+        data: {
+          full_name: fullName,
+          employee_id: employeeId,
+          department,
+          unit,
+        },
       },
     });
 
@@ -80,13 +112,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await supabase.from('profiles').upsert({
         id: data.user.id,
         full_name: fullName,
+        employee_id: employeeId,
+        department,
+        unit,
         role: 'user',
       });
     }
 
     return { error };
   };
-
+  
+  
   const signOut = async () => {
     await supabase.auth.signOut();
     setProfile(null);
