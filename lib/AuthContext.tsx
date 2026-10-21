@@ -14,7 +14,11 @@ type Profile = {
 };
 
 type AuthContextType = {
-    signIn: (employeeId: string, password: string) => Promise<{ error: any }>;
+  user: User | null;
+  profile: Profile | null;
+  session: Session | null;
+  loading: boolean;
+  signIn: (employeeId: string, password: string) => Promise<{ error: any }>;
   signUp: (
     employeeId: string,
     password: string,
@@ -22,6 +26,9 @@ type AuthContextType = {
     department: string,
     unit: string
   ) => Promise<{ error: any }>;
+  signOut: () => Promise<void>;
+  isTechnician: boolean;
+  isAdmin: boolean;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -63,18 +70,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error };
-  };
-
-    const signIn = async (employeeId: string, password: string) => {
-    // แปลงเลขพนักงานเป็นอีเมลภายในระบบ
+  // Login ด้วยเลขพนักงาน
+  const signIn = async (employeeId: string, password: string) => {
     const email = `${employeeId}@repair.local`;
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     return { error };
   };
 
+  // สมัครด้วยเลขพนักงาน + ชื่อ + ฝ่าย + หน่วยงาน
   const signUp = async (
     employeeId: string,
     password: string,
@@ -82,7 +85,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     department: string,
     unit: string
   ) => {
-    // เช็คว่าเลขพนักงานซ้ำหรือยัง
+    // เช็คเลขพนักงานซ้ำ
     const { data: existing } = await supabase
       .from('profiles')
       .select('employee_id')
@@ -121,8 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     return { error };
   };
-  
-  
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setProfile(null);
@@ -153,7 +155,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    // ตอน Build / SSR ให้คืนค่าว่างแทนการ throw error
     return {
       user: null,
       profile: null,
