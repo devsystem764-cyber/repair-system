@@ -80,15 +80,50 @@ export default function Dashboard() {
             </tr>
           </thead>
           <tbody>
-            {tickets.map(ticket => (
-              <tr key={ticket.id}>
-                <td>{ticket.ticket_number}</td>
-                <td>{ticket.requester_name}</td>
-                <td>{ticket.problem_description}</td>
-                <td>{ticket.status}</td>
-              </tr>
-            ))}
-          </tbody>
+  {tickets.map((ticket) => (
+    <tr key={ticket.id} className="border-b hover:bg-gray-50">
+      <td className="py-4 font-medium">{ticket.ticket_number}</td>
+      <td className="py-4">{ticket.requester_name}</td>
+      <td className="py-4">{ticket.location}</td>
+      <td className="py-4">
+        <select
+          value={ticket.status}
+          onChange={async (e) => {
+            const newStatus = e.target.value;
+            const { error } = await supabase
+              .from('repair_tickets')
+              .update({
+                status: newStatus,
+                updated_at: new Date().toISOString(),
+                ...(newStatus === 'resolved' ? { resolved_at: new Date().toISOString() } : {}),
+              })
+              .eq('id', ticket.id);
+
+            if (error) {
+              alert('ไม่สามารถเปลี่ยนสถานะได้: ' + error.message);
+            } else {
+              // รีโหลดข้อมูล
+              const { data } = await supabase
+                .from('repair_tickets')
+                .select('*')
+                .order('created_at', { ascending: false });
+              setTickets(data || []);
+            }
+          }}
+          className="px-2 py-1 rounded-lg border text-sm"
+        >
+          <option value="pending">รอซ่อม</option>
+          <option value="in_progress">กำลังซ่อม</option>
+          <option value="resolved">เสร็จสิ้น</option>
+          <option value="cancelled">ยกเลิก</option>
+        </select>
+      </td>
+      <td className="py-4 text-sm text-gray-500">
+        {new Date(ticket.created_at).toLocaleDateString('th-TH')}
+      </td>
+    </tr>
+  ))}
+</tbody>
         </table>
       </div>
     </div>
