@@ -117,7 +117,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    // ตอน Build / SSR ให้คืนค่าว่างแทนการ throw error
+    return {
+      user: null,
+      profile: null,
+      session: null,
+      loading: true,
+      signIn: async () => ({ error: null }),
+      signUp: async () => ({ error: null }),
+      signOut: async () => {},
+      isTechnician: false,
+      isAdmin: false,
+    };
   }
   return context;
 }
