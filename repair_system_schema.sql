@@ -90,6 +90,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trigger_generate_ticket_number ON repair_tickets;
 CREATE TRIGGER trigger_generate_ticket_number
 BEFORE INSERT ON repair_tickets
 FOR EACH ROW EXECUTE FUNCTION generate_ticket_number();
