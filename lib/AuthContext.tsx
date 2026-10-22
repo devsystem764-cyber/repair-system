@@ -11,6 +11,7 @@ type Profile = {
   department: string | null;
   unit: string | null;
   employee_id: string | null;
+  computer_name: string | null;
 };
 
 type AuthContextType = {
@@ -24,7 +25,8 @@ type AuthContextType = {
     password: string,
     fullName: string,
     department: string,
-    unit: string
+    unit: string,
+    computerName?: string
   ) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
   isTechnician: boolean;
@@ -77,13 +79,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error };
   };
 
-  // สมัครด้วยเลขพนักงาน + ชื่อ + ฝ่าย + หน่วยงาน
+  // สมัครด้วยเลขพนักงาน + ชื่อ + ฝ่าย + หน่วยงาน + ชื่อเครื่อง
   const signUp = async (
     employeeId: string,
     password: string,
     fullName: string,
     department: string,
-    unit: string
+    unit: string,
+    computerName?: string
   ) => {
     // เช็คเลขพนักงานซ้ำ
     const { data: existing } = await supabase
@@ -107,6 +110,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           employee_id: employeeId,
           department,
           unit,
+          computer_name: computerName || null,
         },
       },
     });
@@ -118,6 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         employee_id: employeeId,
         department,
         unit,
+        computer_name: computerName?.trim() || null,
         role: 'user',
       });
     }

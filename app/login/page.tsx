@@ -15,6 +15,7 @@ export default function LoginPage() {
   const [fullName, setFullName] = useState('');
   const [department, setDepartment] = useState('');
   const [unit, setUnit] = useState('');
+  const [computerName, setComputerName] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
@@ -54,12 +55,19 @@ export default function LoginPage() {
         return;
       }
 
+      if (!computerName.trim()) {
+        setError('กรุณากรอกชื่อเครื่องคอมพิวเตอร์');
+        setLoading(false);
+        return;
+      }
+
       const { error } = await signUp(
         employeeId.trim(),
         password,
         fullName.trim(),
         department.trim(),
-        unit.trim()
+        unit.trim(),
+        computerName.trim()
       );
 
       if (error) {
@@ -132,6 +140,18 @@ export default function LoginPage() {
                   className="w-full px-4 py-3 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="เช่น หน่วยงานซ่อมบำรุง"
                 />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">ชื่อเครื่องคอมพิวเตอร์</label>
+                <input
+                  type="text"
+                  required
+                  value={computerName}
+                  onChange={(e) => setComputerName(e.target.value)}
+                  className="w-full px-4 py-3 border rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="เช่น PC-IT-01"
+                />
+                <p className="text-xs text-gray-500 mt-1">กรุณากรอกชื่อเครื่องที่ใช้งานจริง และยืนยันความถูกต้อง</p>
               </div>
             </>
           )}
