@@ -1,16 +1,29 @@
+
 'use client';
 
+export const dynamic = 'force-dynamic';
+
+import { useAuth } from '../lib/AuthContext';
 import TicketForm from '../components/TicketForm';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 export default function Home() {
+  const { user, profile, loading } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && profile?.role === 'admin') {
+      router.replace('/dashboard');
+    }
+  }, [profile, loading, router]);
+
+  if (loading) return <div className="p-8 text-center">กำลังโหลด...</div>;
+  if (!user) return <div className="p-8 text-center">กรุณาเข้าสู่ระบบ</div>;
+  if (profile?.role === 'admin') return <div className="p-8 text-center">กำลังเปลี่ยนหน้า...</div>;
+
   return (
-    <main className="max-w-3xl mx-auto p-4 md:p-8">
-      <div className="mb-8 text-center">
-        <h2 className="text-3xl md:text-4xl font-bold mb-2">แจ้งปัญหา / ขอซ่อม</h2>
-        <p className="text-gray-600">
-          กรอกข้อมูลด้านล่างเพื่อแจ้งซ่อม (ไม่จำเป็นต้อง Login)
-        </p>
-      </div>
+    <main className="py-8">
       <TicketForm />
     </main>
   );
